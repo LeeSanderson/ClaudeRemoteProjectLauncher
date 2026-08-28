@@ -57,6 +57,35 @@ Set `CLAUDE_TERMINAL_COMMAND` to override the choice, for example
 `CLAUDE_TERMINAL_COMMAND="alacritty -e"`. Pass `--here` to skip the new window
 and run the session attached to the current terminal instead.
 
+### A fresh session, not a nested one
+
+When `launch-project` is run from inside a Claude Code session — which is the
+normal case for the `/launch-project` skill — that session's own environment
+contains markers describing it:
+
+```
+CLAUDECODE=1
+CLAUDE_CODE_CHILD_SESSION=1
+CLAUDE_CODE_SESSION_ID=...
+CLAUDE_CODE_MESSAGING_SOCKET=...
+CLAUDE_CODE_MESSAGING_TOKEN=...
+CLAUDE_CODE_SSE_PORT=...
+CLAUDE_CODE_ENTRYPOINT=cli
+CLAUDE_PID=...
+```
+
+A plain `spawn` inherits all of them, so the launched session would believe it
+was a nested child of the launching one — reporting `Transcript saving is off —
+inherited CLAUDE_CODE_CHILD_SESSION marker` and saving no transcript — while
+also holding the launching session's id, IPC socket and messaging token.
+
+The launcher therefore strips those variables (see `SESSION_SCOPED_ENV_VARS` in
+`lib/launcher.js`) before spawning, so the new session starts as a normal
+top-level session. The list is a denylist of session-scoped names: user
+configuration such as `ANTHROPIC_API_KEY`, `CLAUDE_CODE_USE_BEDROCK` or
+`CLAUDE_CONFIG_DIR` is passed through untouched, since silently dropping a
+setting would be a worse failure than missing a newly added marker.
+
 ## Claude Code skills
 
 Two Claude Code skills are provided under `.claude/skills/` so the same
