@@ -26,6 +26,7 @@ function runCli(args) {
   return execFileSync('node', [binPath, ...args], {
     env: { ...process.env, CLAUDE_REMOTE_LAUNCHER_HOME: tmpHome },
     encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
 }
 
@@ -44,7 +45,10 @@ test('list-projects reports when no projects are registered', () => {
 });
 
 test('launch-project reports an error for an unregistered project', () => {
-  assert.throws(() => runCli(['launch-project', 'missing']), /No project registered/);
+  assert.throws(() => runCli(['launch-project', 'missing']), (err) => {
+    assert.match(err.stderr, /No project registered/);
+    return true;
+  });
 });
 
 test('running with no command prints usage', () => {

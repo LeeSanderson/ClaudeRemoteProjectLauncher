@@ -85,6 +85,13 @@ test('getProject returns the registered project', () => {
   assert.equal(project.path, path.resolve(tmpProjectDir));
 });
 
+test('loadProjects throws a descriptive error for malformed JSON', () => {
+  fs.mkdirSync(tmpHome, { recursive: true });
+  fs.writeFileSync(projects.getProjectsFilePath(), '{ not valid json');
+
+  assert.throws(() => projects.loadProjects(), /Failed to parse projects file/);
+});
+
 test('listProjects returns all registered projects', () => {
   const secondDir = fs.mkdtempSync(path.join(os.tmpdir(), 'claude-remote-launcher-project-2-'));
 
