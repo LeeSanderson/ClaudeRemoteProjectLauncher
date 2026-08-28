@@ -74,6 +74,22 @@ test('addProject updates an existing project when registered again', () => {
   }
 });
 
+test('addProject replaces a project whose name differs only in case', () => {
+  const secondDir = fs.mkdtempSync(path.join(os.tmpdir(), 'claude-remote-launcher-project-2-'));
+
+  try {
+    projects.addProject('My-App', tmpProjectDir);
+    const updated = projects.addProject('my-app', secondDir);
+
+    // One entry, under the casing it was last registered with.
+    assert.equal(updated.name, 'my-app');
+    assert.deepEqual(Object.keys(projects.loadProjects()), ['my-app']);
+    assert.equal(projects.getProject('MY-APP').path, path.resolve(secondDir));
+  } finally {
+    fs.rmSync(secondDir, { recursive: true, force: true });
+  }
+});
+
 test('getProject returns undefined for unregistered projects', () => {
   assert.equal(projects.getProject('missing'), undefined);
 });
@@ -83,6 +99,25 @@ test('getProject returns the registered project', () => {
   const project = projects.getProject('my-app');
   assert.equal(project.name, 'my-app');
   assert.equal(project.path, path.resolve(tmpProjectDir));
+});
+
+test('getProject matches the name case-insensitively', () => {
+  projects.addProject('D12Canvas', tmpProjectDir);
+
+  for (const name of ['D12Canvas', 'd12canvas', 'D12CANVAS', 'd12Canvas']) {
+    const project = projects.getProject(name);
+    assert.ok(project, `expected to find a project for "${name}"`);
+    // The registered casing is what gets returned, whatever was asked for.
+    assert.equal(project.name, 'D12Canvas');
+    assert.equal(project.path, path.resolve(tmpProjectDir));
+  }
+});
+
+test('getProject returns undefined for an empty name', () => {
+  projects.addProject('my-app', tmpProjectDir);
+
+  assert.equal(projects.getProject(''), undefined);
+  assert.equal(projects.getProject(undefined), undefined);
 });
 
 test('loadProjects throws a descriptive error for malformed JSON', () => {

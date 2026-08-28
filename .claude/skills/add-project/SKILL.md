@@ -24,7 +24,9 @@ Given `$ARGUMENTS` (a project name and a path, in that order):
    node bin/claude-remote-launcher.js list-projects
    ```
    Registering an existing name **overwrites** its stored path without warning,
-   and the CLI reports success either way. If the name is already registered,
+   and the CLI reports success either way. Compare names
+   **case-insensitively** — `my-app` and `My-App` are the same project, and
+   registering the second replaces the first. If the name is already registered,
    tell the user which path it currently points at and ask whether to replace it
    or use a different name.
 4. Run the launcher CLI to register the project:

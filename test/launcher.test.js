@@ -211,6 +211,23 @@ test('launchProject honours CLAUDE_CLI_COMMAND and CLAUDE_REMOTE_FLAG overrides'
   assert.deepEqual(terminalCalls[0].argv, ['custom-claude', '--rc', 'my-app']);
 });
 
+test('launchProject finds the project whatever case the name is given in', () => {
+  projects.addProject('D12Canvas', tmpProjectDir);
+
+  const { spawnFn } = recordingSpawn();
+  const terminalCalls = [];
+  const buildTerminalCommandFn = (cwd, argv) => {
+    terminalCalls.push({ cwd, argv });
+    return { file: 'fake-term', args: argv, verbatim: false, description: 'Fake Terminal' };
+  };
+
+  const result = launcher.launchProject('d12canvas', { spawnFn, buildTerminalCommandFn });
+
+  // The session is named with the registered casing, not the one typed.
+  assert.equal(result.project.name, 'D12Canvas');
+  assert.deepEqual(terminalCalls[0].argv, ['claude', '--remote-control', 'D12Canvas']);
+});
+
 test('launchProject names the remote session after the project', () => {
   projects.addProject('My Long Project', tmpProjectDir);
 

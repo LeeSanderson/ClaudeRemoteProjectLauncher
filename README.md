@@ -11,6 +11,12 @@ Registered projects are stored in a `projects.json` file under
 `~/.claude-remote-launcher/` (configurable via the `CLAUDE_REMOTE_LAUNCHER_HOME`
 environment variable, which is mainly useful for testing).
 
+Project names are matched **case-insensitively**, so `launch-project d12canvas`
+finds the project registered as `D12Canvas`. The registered casing is what gets
+used — for the session name, and in `list-projects` output. Registering a name
+that differs from an existing one only in case replaces that project (taking on
+the new casing) rather than adding a second entry lookups could not tell apart.
+
 ## CLI usage
 
 ```sh
