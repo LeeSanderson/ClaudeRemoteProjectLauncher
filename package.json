@@ -1,0 +1,13 @@
+{
+  "name": "claude-remote-project-launcher",
+  "version": "1.0.0",
+  "description": "A utility to manage local projects and launch Claude remote sessions",
+  "main": "lib/index.js",
+  "bin": {
+    "claude-remote-launcher": "bin/claude-remote-launcher.js"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "license": "MIT"
+}

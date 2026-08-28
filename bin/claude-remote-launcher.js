@@ -1,0 +1,90 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const { addProject, listProjects } = require('../lib/projects');
+const { launchProject } = require('../lib/launcher');
+
+function printUsage() {
+  console.log(`Usage: claude-remote-launcher <command> [options]
+
+Commands:
+  add-project <name> <path>   Register a local project by name and path
+  launch-project <name>       Launch Claude in remote mode for a registered project
+  list-projects                List all registered projects
+`);
+}
+
+function runAddProject(args) {
+  const [name, projectPath] = args;
+
+  if (!name || !projectPath) {
+    console.error('Usage: claude-remote-launcher add-project <name> <path>');
+    process.exitCode = 1;
+    return;
+  }
+
+  const project = addProject(name, projectPath);
+  console.log(`Registered project "${project.name}" at ${project.path}`);
+}
+
+function runLaunchProject(args) {
+  const [name] = args;
+
+  if (!name) {
+    console.error('Usage: claude-remote-launcher launch-project <name>');
+    process.exitCode = 1;
+    return;
+  }
+
+  const child = launchProject(name);
+
+  child.on('exit', (code) => {
+    process.exitCode = code === null ? 1 : code;
+  });
+}
+
+function runListProjects() {
+  const projects = listProjects();
+
+  if (projects.length === 0) {
+    console.log('No projects registered yet. Use add-project to register one.');
+    return;
+  }
+
+  for (const project of projects) {
+    console.log(`${project.name}\t${project.path}`);
+  }
+}
+
+function main(argv) {
+  const [command, ...args] = argv;
+
+  try {
+    switch (command) {
+      case 'add-project':
+        runAddProject(args);
+        break;
+      case 'launch-project':
+        runLaunchProject(args);
+        break;
+      case 'list-projects':
+        runListProjects();
+        break;
+      default:
+        printUsage();
+        if (command) {
+          process.exitCode = 1;
+        }
+    }
+  } catch (err) {
+    console.error(`Error: ${err.message}`);
+    process.exitCode = 1;
+  }
+}
+
+if (require.main === module) {
+  main(process.argv.slice(2));
+}
+
+module.exports = { main };
