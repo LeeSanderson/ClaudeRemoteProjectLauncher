@@ -28,30 +28,98 @@ afterEach(() => {
   delete process.env.CLAUDE_REMOTE_LAUNCHER_HOME;
   delete process.env.CLAUDE_CLI_COMMAND;
   delete process.env.CLAUDE_REMOTE_FLAG;
+  delete process.env.CLAUDE_TERMINAL_COMMAND;
 });
 
-test('launchProject throws when the project is not registered', () => {
-  assert.throws(() => launcher.launchProject('missing'), /No project registered/);
-});
-
-test('launchProject spawns the claude CLI with remote flag and project cwd', () => {
-  projects.addProject('my-app', tmpProjectDir);
-
+/**
+ * Returns a spawn stub that records its calls and hands back a fake child.
+ */
+function recordingSpawn() {
   const calls = [];
   const fakeChild = new EventEmitter();
+  let unrefs = 0;
+  fakeChild.unref = () => {
+    unrefs += 1;
+  };
+
   const spawnFn = (command, args, options) => {
     calls.push({ command, args, options });
     return fakeChild;
   };
 
-  const child = launcher.launchProject('my-app', { spawnFn });
+  return { calls, fakeChild, spawnFn, unrefCount: () => unrefs };
+}
 
-  assert.equal(child, fakeChild);
+test('launchProject throws when the project is not registered', () => {
+  assert.throws(() => launcher.launchProject('missing'), /No project registered/);
+});
+
+test('launchProject opens the claude remote session in a new terminal window', () => {
+  projects.addProject('my-app', tmpProjectDir);
+
+  const { calls, fakeChild, spawnFn, unrefCount } = recordingSpawn();
+  const terminalCalls = [];
+  const buildTerminalCommandFn = (cwd, argv) => {
+    terminalCalls.push({ cwd, argv });
+    return { file: 'fake-term', args: ['--run', ...argv], verbatim: false, description: 'Fake Terminal' };
+  };
+
+  const result = launcher.launchProject('my-app', { spawnFn, buildTerminalCommandFn });
+
+  assert.equal(result.child, fakeChild);
+  assert.equal(result.project.name, 'my-app');
+  assert.equal(result.terminal.description, 'Fake Terminal');
+
+  // The claude command and remote flag are handed to the terminal builder.
+  assert.equal(terminalCalls.length, 1);
+  assert.equal(terminalCalls[0].cwd, path.resolve(tmpProjectDir));
+  assert.deepEqual(terminalCalls[0].argv, ['claude', '--remote-control']);
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].command, 'fake-term');
+  assert.deepEqual(calls[0].args, ['--run', 'claude', '--remote-control']);
+  assert.equal(calls[0].options.cwd, path.resolve(tmpProjectDir));
+  assert.equal(calls[0].options.detached, true);
+  assert.equal(calls[0].options.stdio, 'ignore');
+  assert.equal(calls[0].options.windowsVerbatimArguments, false);
+
+  // The launcher must not keep the parent process alive.
+  assert.equal(unrefCount(), 1);
+});
+
+test('launchProject passes windowsVerbatimArguments through for verbatim terminals', () => {
+  projects.addProject('my-app', tmpProjectDir);
+
+  const { calls, spawnFn } = recordingSpawn();
+  const buildTerminalCommandFn = () => ({
+    file: 'cmd.exe',
+    args: ['/c', 'start "" cmd.exe /k claude --remote-control'],
+    verbatim: true,
+    description: 'a new console window',
+  });
+
+  launcher.launchProject('my-app', { spawnFn, buildTerminalCommandFn });
+
+  assert.equal(calls[0].options.windowsVerbatimArguments, true);
+});
+
+test('launchProject with newWindow false runs attached to the current stdio', () => {
+  projects.addProject('my-app', tmpProjectDir);
+
+  const { calls, spawnFn } = recordingSpawn();
+  const buildTerminalCommandFn = () => {
+    throw new Error('should not build a terminal command when newWindow is false');
+  };
+
+  const result = launcher.launchProject('my-app', { spawnFn, newWindow: false, buildTerminalCommandFn });
+
+  assert.equal(result.terminal, null);
   assert.equal(calls.length, 1);
   assert.equal(calls[0].command, 'claude');
   assert.deepEqual(calls[0].args, ['--remote-control']);
   assert.equal(calls[0].options.cwd, path.resolve(tmpProjectDir));
   assert.equal(calls[0].options.stdio, 'inherit');
+  assert.equal(calls[0].options.detached, undefined);
 });
 
 test('launchProject honours CLAUDE_CLI_COMMAND and CLAUDE_REMOTE_FLAG overrides', () => {
@@ -59,15 +127,14 @@ test('launchProject honours CLAUDE_CLI_COMMAND and CLAUDE_REMOTE_FLAG overrides'
   process.env.CLAUDE_CLI_COMMAND = 'custom-claude';
   process.env.CLAUDE_REMOTE_FLAG = '--rc';
 
-  const calls = [];
-  const fakeChild = new EventEmitter();
-  const spawnFn = (command, args, options) => {
-    calls.push({ command, args, options });
-    return fakeChild;
+  const { spawnFn } = recordingSpawn();
+  const terminalCalls = [];
+  const buildTerminalCommandFn = (cwd, argv) => {
+    terminalCalls.push({ cwd, argv });
+    return { file: 'fake-term', args: argv, verbatim: false, description: 'Fake Terminal' };
   };
 
-  launcher.launchProject('my-app', { spawnFn });
+  launcher.launchProject('my-app', { spawnFn, buildTerminalCommandFn });
 
-  assert.equal(calls[0].command, 'custom-claude');
-  assert.deepEqual(calls[0].args, ['--rc']);
+  assert.deepEqual(terminalCalls[0].argv, ['custom-claude', '--rc']);
 });

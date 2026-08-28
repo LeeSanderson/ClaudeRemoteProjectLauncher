@@ -10,8 +10,14 @@ function printUsage() {
 
 Commands:
   add-project <name> <path>   Register a local project by name and path
-  launch-project <name>       Launch Claude in remote mode for a registered project
-  list-projects                List all registered projects
+  launch-project <name>       Launch Claude in remote mode for a registered project,
+                              in a new terminal window
+  list-projects               List all registered projects
+
+Options:
+  --here                      launch-project only: run the session attached to the
+                              current terminal instead of opening a new window
+                              (requires an interactive TTY)
 `);
 }
 
@@ -29,19 +35,30 @@ function runAddProject(args) {
 }
 
 function runLaunchProject(args) {
-  const [name] = args;
+  const here = args.includes('--here');
+  const [name] = args.filter((arg) => !arg.startsWith('--'));
 
   if (!name) {
-    console.error('Usage: claude-remote-launcher launch-project <name>');
+    console.error('Usage: claude-remote-launcher launch-project <name> [--here]');
     process.exitCode = 1;
     return;
   }
 
-  const child = launchProject(name);
+  const { child, project, terminal } = launchProject(name, { newWindow: !here });
 
-  child.on('exit', (code) => {
-    process.exitCode = code === null ? 1 : code;
+  if (here) {
+    child.on('exit', (code) => {
+      process.exitCode = code === null ? 1 : code;
+    });
+    return;
+  }
+
+  child.on('error', (err) => {
+    console.error(`Error: failed to open a terminal window using ${terminal.file}: ${err.message}`);
+    process.exitCode = 1;
   });
+
+  console.log(`Launched Claude in remote mode for "${project.name}" in ${terminal.description} (${project.path}).`);
 }
 
 function runListProjects() {

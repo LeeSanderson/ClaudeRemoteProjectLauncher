@@ -26,5 +26,10 @@ Given `$ARGUMENTS` (a project name):
    ```
    (Use the globally installed `claude-remote-launcher` command instead if the
    CLI has been installed via `npm install -g`.)
+
+   The session opens in a **new terminal window**, because
+   `claude --remote-control` is interactive and needs a TTY of its own. The
+   command returns as soon as that window has been opened.
 3. Report the result to the user, including any error message if the project
-   was not found (for example, if it has not been registered yet).
+   was not found (for example, if it has not been registered yet) or if no
+   terminal emulator could be found to open.
