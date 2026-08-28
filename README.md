@@ -98,6 +98,29 @@ configuration such as `ANTHROPIC_API_KEY`, `CLAUDE_CODE_USE_BEDROCK` or
 `CLAUDE_CONFIG_DIR` is passed through untouched, since silently dropping a
 setting would be a worse failure than missing a newly added marker.
 
+## Starting the Launcher session
+
+`Start-Launcher.ps1` (in the repository root) starts a remote-control session
+for *this* repository, named `Launcher`:
+
+```powershell
+.\Start-Launcher.ps1
+
+# ...or under a different name, if you run one per machine
+.\Start-Launcher.ps1 -SessionName "Launcher (laptop)"
+```
+
+It runs `claude --remote-control Launcher` with the working directory set to the
+repository root, taken from the script's own location, so it works from any
+current directory. From that session the skills below are available, which makes
+it the session you drive from the Claude app to launch remote-control sessions
+for your other projects.
+
+The session is attached to the terminal you run the script from, because
+`claude --remote-control` needs a TTY; start it from a terminal window rather
+than from another process. Set `CLAUDE_CLI_COMMAND` if your Claude Code binary
+is not called `claude` or is not on `PATH`.
+
 ## Claude Code skills
 
 Three Claude Code skills are provided under `.claude/skills/` so the same
