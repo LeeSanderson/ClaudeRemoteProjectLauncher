@@ -1,10 +1,7 @@
 ---
 name: add-project
-description: >
-  Registers a local project's name and path in projects.json so it can later
-  be launched with /launch-project. Use when the user asks to add, register,
-  or remember a project for the Claude Remote Project Launcher.
-argument-hint: [name] [path]
+description: Registers a local project's name and path in projects.json so it can later be launched with /launch-project. Use when the user asks to add, register, or remember a project for the Claude Remote Project Launcher.
+argument-hint: "[name] [path]"
 allowed-tools: [Bash]
 ---
 

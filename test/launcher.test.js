@@ -70,14 +70,14 @@ test('launchProject opens the claude remote session in a new terminal window', (
   assert.equal(result.project.name, 'my-app');
   assert.equal(result.terminal.description, 'Fake Terminal');
 
-  // The claude command and remote flag are handed to the terminal builder.
+  // The claude command, remote flag and session name are handed to the builder.
   assert.equal(terminalCalls.length, 1);
   assert.equal(terminalCalls[0].cwd, path.resolve(tmpProjectDir));
-  assert.deepEqual(terminalCalls[0].argv, ['claude', '--remote-control']);
+  assert.deepEqual(terminalCalls[0].argv, ['claude', '--remote-control', 'my-app']);
 
   assert.equal(calls.length, 1);
   assert.equal(calls[0].command, 'fake-term');
-  assert.deepEqual(calls[0].args, ['--run', 'claude', '--remote-control']);
+  assert.deepEqual(calls[0].args, ['--run', 'claude', '--remote-control', 'my-app']);
   assert.equal(calls[0].options.cwd, path.resolve(tmpProjectDir));
   assert.equal(calls[0].options.detached, true);
   assert.equal(calls[0].options.stdio, 'ignore');
@@ -116,7 +116,7 @@ test('launchProject with newWindow false runs attached to the current stdio', ()
   assert.equal(result.terminal, null);
   assert.equal(calls.length, 1);
   assert.equal(calls[0].command, 'claude');
-  assert.deepEqual(calls[0].args, ['--remote-control']);
+  assert.deepEqual(calls[0].args, ['--remote-control', 'my-app']);
   assert.equal(calls[0].options.cwd, path.resolve(tmpProjectDir));
   assert.equal(calls[0].options.stdio, 'inherit');
   assert.equal(calls[0].options.detached, undefined);
@@ -208,5 +208,21 @@ test('launchProject honours CLAUDE_CLI_COMMAND and CLAUDE_REMOTE_FLAG overrides'
 
   launcher.launchProject('my-app', { spawnFn, buildTerminalCommandFn });
 
-  assert.deepEqual(terminalCalls[0].argv, ['custom-claude', '--rc']);
+  assert.deepEqual(terminalCalls[0].argv, ['custom-claude', '--rc', 'my-app']);
+});
+
+test('launchProject names the remote session after the project', () => {
+  projects.addProject('My Long Project', tmpProjectDir);
+
+  const { spawnFn } = recordingSpawn();
+  const terminalCalls = [];
+  const buildTerminalCommandFn = (cwd, argv) => {
+    terminalCalls.push({ cwd, argv });
+    return { file: 'fake-term', args: argv, verbatim: false, description: 'Fake Terminal' };
+  };
+
+  launcher.launchProject('My Long Project', { spawnFn, buildTerminalCommandFn });
+
+  // The name stays a single argv entry, so the terminal layer can quote it.
+  assert.deepEqual(terminalCalls[0].argv, ['claude', '--remote-control', 'My Long Project']);
 });

@@ -57,6 +57,18 @@ Set `CLAUDE_TERMINAL_COMMAND` to override the choice, for example
 `CLAUDE_TERMINAL_COMMAND="alacritty -e"`. Pass `--here` to skip the new window
 and run the session attached to the current terminal instead.
 
+### Session naming
+
+The session is started as `claude --remote-control "<project name>"`, so it
+appears under the project's name in the Claude app's Remote Control session
+list. Without a name Claude auto-generates one prefixed with the machine's
+hostname, which makes several launched projects hard to tell apart.
+
+The name is registered server-side, so it is not visible in any local file.
+Note that `~/.claude/sessions/<pid>.json` also has a `name` field (with
+`nameSource: "derived"`) — that is the separate *local* session name, derived
+from the working directory, and it is not affected by this flag.
+
 ### A fresh session, not a nested one
 
 When `launch-project` is run from inside a Claude Code session — which is the

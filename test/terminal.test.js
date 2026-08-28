@@ -73,6 +73,25 @@ test('windows falls back to cmd start with an always-quoted empty window title',
   assert.match(result.args[1], /cmd\.exe \/k claude --remote-control$/);
 });
 
+test('windows cmd fallback quotes a session name containing spaces', () => {
+  const result = buildTerminalCommand('C:\\projects\\my-app', ['claude', '--remote-control', 'My Long Project'], {
+    platform: 'win32',
+    canResolveFn: resolver(),
+  });
+
+  assert.match(result.args[1], /cmd\.exe \/k claude --remote-control "My Long Project"$/);
+});
+
+test('windows terminal keeps a spaced session name as one argv entry', () => {
+  const result = buildTerminalCommand('C:\\projects\\my-app', ['claude', '--remote-control', 'My Long Project'], {
+    platform: 'win32',
+    canResolveFn: resolver('wt.exe'),
+  });
+
+  // Node quotes this entry when building the command line; it must not be split.
+  assert.equal(result.args[result.args.length - 1], 'My Long Project');
+});
+
 test('macos drives Terminal.app via osascript with a quoted cd', () => {
   const result = buildTerminalCommand("/Users/me/my 'app'", ARGV, { platform: 'darwin' });
 

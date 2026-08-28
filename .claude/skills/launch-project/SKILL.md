@@ -1,10 +1,7 @@
 ---
 name: launch-project
-description: >
-  Launches Claude Code in remote mode for a project previously registered
-  with /add-project. Use when the user asks to launch, open, or start a
-  remote session for a named project.
-argument-hint: [name]
+description: Launches Claude Code in remote mode for a project previously registered with /add-project. Use when the user asks to launch, open, or start a remote session for a named project.
+argument-hint: "[name]"
 allowed-tools: [Bash]
 ---
 
