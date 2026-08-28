@@ -120,6 +120,61 @@ test('getProject returns undefined for an empty name', () => {
   assert.equal(projects.getProject(undefined), undefined);
 });
 
+test('removeProject removes a registered project and persists the removal', () => {
+  projects.addProject('my-app', tmpProjectDir);
+
+  const removed = projects.removeProject('my-app');
+
+  assert.equal(removed.name, 'my-app');
+  assert.equal(removed.path, path.resolve(tmpProjectDir));
+  assert.equal(projects.getProject('my-app'), undefined);
+  assert.deepEqual(JSON.parse(fs.readFileSync(projects.getProjectsFilePath(), 'utf8')), {});
+});
+
+test('removeProject leaves the project directory alone', () => {
+  projects.addProject('my-app', tmpProjectDir);
+  projects.removeProject('my-app');
+
+  assert.ok(fs.existsSync(tmpProjectDir));
+});
+
+test('removeProject matches the name case-insensitively', () => {
+  projects.addProject('D12Canvas', tmpProjectDir);
+
+  const removed = projects.removeProject('d12canvas');
+
+  // The registered casing is what gets reported, whatever was asked for.
+  assert.equal(removed.name, 'D12Canvas');
+  assert.deepEqual(projects.listProjects(), []);
+});
+
+test('removeProject leaves the other registered projects in place', () => {
+  const secondDir = fs.mkdtempSync(path.join(os.tmpdir(), 'claude-remote-launcher-project-2-'));
+
+  try {
+    projects.addProject('app-one', tmpProjectDir);
+    projects.addProject('app-two', secondDir);
+
+    projects.removeProject('app-one');
+
+    assert.deepEqual(
+      projects.listProjects().map((p) => p.name),
+      ['app-two']
+    );
+  } finally {
+    fs.rmSync(secondDir, { recursive: true, force: true });
+  }
+});
+
+test('removeProject throws when the project is not registered', () => {
+  assert.throws(() => projects.removeProject('missing'), /No project registered/);
+});
+
+test('removeProject throws when the name is missing', () => {
+  assert.throws(() => projects.removeProject(''), /name is required/);
+  assert.throws(() => projects.removeProject(undefined), /name is required/);
+});
+
 test('loadProjects throws a descriptive error for malformed JSON', () => {
   fs.mkdirSync(tmpHome, { recursive: true });
   fs.writeFileSync(projects.getProjectsFilePath(), '{ not valid json');

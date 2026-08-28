@@ -2,7 +2,7 @@
 
 'use strict';
 
-const { addProject, listProjects } = require('../lib/projects');
+const { addProject, removeProject, listProjects } = require('../lib/projects');
 const { launchProject } = require('../lib/launcher');
 
 function printUsage() {
@@ -10,6 +10,7 @@ function printUsage() {
 
 Commands:
   add-project <name> <path>   Register a local project by name and path
+  remove-project <name>       Remove a registered project (leaves the directory alone)
   launch-project <name>       Launch Claude in remote mode for a registered project,
                               in a new terminal window
   list-projects               List all registered projects
@@ -32,6 +33,19 @@ function runAddProject(args) {
 
   const project = addProject(name, projectPath);
   console.log(`Registered project "${project.name}" at ${project.path}`);
+}
+
+function runRemoveProject(args) {
+  const [name] = args;
+
+  if (!name) {
+    console.error('Usage: claude-remote-launcher remove-project <name>');
+    process.exitCode = 1;
+    return;
+  }
+
+  const project = removeProject(name);
+  console.log(`Removed project "${project.name}" (was registered at ${project.path})`);
 }
 
 function runLaunchProject(args) {
@@ -81,6 +95,9 @@ function main(argv) {
     switch (command) {
       case 'add-project':
         runAddProject(args);
+        break;
+      case 'remove-project':
+        runRemoveProject(args);
         break;
       case 'launch-project':
         runLaunchProject(args);

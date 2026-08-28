@@ -44,6 +44,22 @@ test('list-projects reports when no projects are registered', () => {
   assert.match(output, /No projects registered/);
 });
 
+test('remove-project deregisters a project so list-projects no longer shows it', () => {
+  runCli(['add-project', 'my-app', tmpProjectDir]);
+
+  const removeOutput = runCli(['remove-project', 'my-app']);
+  assert.match(removeOutput, /Removed project "my-app"/);
+
+  assert.match(runCli(['list-projects']), /No projects registered/);
+});
+
+test('remove-project reports an error for an unregistered project', () => {
+  assert.throws(() => runCli(['remove-project', 'missing']), (err) => {
+    assert.match(err.stderr, /No project registered/);
+    return true;
+  });
+});
+
 test('launch-project reports an error for an unregistered project', () => {
   assert.throws(() => runCli(['launch-project', 'missing']), (err) => {
     assert.match(err.stderr, /No project registered/);

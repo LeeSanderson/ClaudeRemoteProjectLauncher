@@ -3,7 +3,7 @@ A utility to manage local projects and launch Claude remote sessions
 
 ## Overview
 
-`claude-remote-launcher` is a small CLI utility, plus a pair of Claude Code
+`claude-remote-launcher` is a small CLI utility, plus a set of Claude Code
 skills, for registering local projects and launching Claude Code in remote
 mode (`claude --remote-control`) for them.
 
@@ -22,6 +22,9 @@ the new casing) rather than adding a second entry lookups could not tell apart.
 ```sh
 # Register a project by name and path
 node bin/claude-remote-launcher.js add-project my-app /path/to/my-app
+
+# Remove a registered project (the project directory itself is left alone)
+node bin/claude-remote-launcher.js remove-project my-app
 
 # List registered projects
 node bin/claude-remote-launcher.js list-projects
@@ -129,11 +132,13 @@ is not called `claude` or is not on `PATH`.
 
 ## Claude Code skills
 
-Three Claude Code skills are provided under `.claude/skills/` so the same
+Four Claude Code skills are provided under `.claude/skills/` so the same
 functionality is available from within a Claude Code session:
 
 - `/add-project <name> <path>` — registers a local project's name and path in
   `projects.json`.
+- `/remove-project <name>` — removes a project from the registered list. Only
+  the registration goes; the project directory is left untouched.
 - `/list-projects` — lists the registered projects and their paths.
 - `/launch-project <name>` — launches Claude Code in remote mode for a
   previously registered project.
