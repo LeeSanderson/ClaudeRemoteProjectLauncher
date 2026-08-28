@@ -148,7 +148,7 @@ and keeps its window out of the way until you want it. Install it with:
 ```
 
 That publishes `tray/ClaudeLauncherTray.csproj` to `tray/publish` (a single
-~190 KB executable, needing the .NET 8 desktop runtime) and registers a
+~200 KB executable, needing the .NET 10 desktop runtime) and registers a
 scheduled task that starts it 30 seconds after you log on. Task Scheduler is
 used rather than a Startup shortcut because it can delay the start until the
 network and your Claude Code credentials are available, and because it restarts
@@ -219,17 +219,17 @@ Install dependencies (none required beyond Node.js) and run the test suite:
 npm test
 ```
 
-The tray application is a separate .NET project, built with the .NET 8 SDK:
+The tray application is a separate .NET project, built with the .NET 10 SDK:
 
 ```powershell
 dotnet build tray\ClaudeLauncherTray.csproj -c Release
 
 # Run it against this repository without installing the scheduled task,
 # leaving the session window on screen so you can watch it start
-tray\bin\Release\net8.0-windows\win-x64\ClaudeLauncherTray.exe --visible
+tray\bin\Release\net10.0-windows\win-x64\ClaudeLauncherTray.exe --visible
 
 # All options
-tray\bin\Release\net8.0-windows\win-x64\ClaudeLauncherTray.exe --help
+tray\bin\Release\net10.0-windows\win-x64\ClaudeLauncherTray.exe --help
 ```
 
 Its build output is ignored via `tray/bin/`, `tray/obj/` and `tray/publish/`
