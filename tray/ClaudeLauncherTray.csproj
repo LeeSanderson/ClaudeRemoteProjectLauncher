@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      WinExe rather than Exe: the tray application must never own a console
+      window, otherwise starting it at logon would flash one on screen.
+    -->
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>ClaudeLauncherTray</AssemblyName>
+    <RootNamespace>ClaudeLauncherTray</RootNamespace>
+    <Version>1.0.0</Version>
+    <Product>Claude Remote Project Launcher tray</Product>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- The published exe is launched by Task Scheduler, so keep it self-contained-ish and tidy. -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+</Project>

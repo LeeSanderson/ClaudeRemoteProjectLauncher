@@ -5,7 +5,9 @@ A utility to manage local projects and launch Claude remote sessions
 
 `claude-remote-launcher` is a small CLI utility, plus a set of Claude Code
 skills, for registering local projects and launching Claude Code in remote
-mode (`claude --remote-control`) for them.
+mode (`claude --remote-control`) for them. A Windows tray application is
+included for running the Launcher session itself from logon onwards — see
+[Running the Launcher from the notification area](#running-the-launcher-from-the-notification-area).
 
 Registered projects are stored in a `projects.json` file under
 `~/.claude-remote-launcher/` (configurable via the `CLAUDE_REMOTE_LAUNCHER_HOME`
@@ -130,6 +132,72 @@ The session is attached to the terminal you run the script from, because
 than from another process. Set `CLAUDE_CLI_COMMAND` if your Claude Code binary
 is not called `claude` or is not on `PATH`.
 
+## Running the Launcher from the notification area
+
+`tray/` holds a small tray application that runs the Launcher session at logon
+and keeps its window out of the way until you want it. Install it with:
+
+```powershell
+.\Install-TrayTask.ps1
+
+# ...with the session restarted automatically, and started straight away
+.\Install-TrayTask.ps1 -AutoRestart -StartNow
+
+# ...or remove the scheduled task again
+.\Install-TrayTask.ps1 -Uninstall
+```
+
+That publishes `tray/ClaudeLauncherTray.csproj` to `tray/publish` (a single
+~190 KB executable, needing the .NET 8 desktop runtime) and registers a
+scheduled task that starts it 30 seconds after you log on. Task Scheduler is
+used rather than a Startup shortcut because it can delay the start until the
+network and your Claude Code credentials are available, and because it restarts
+the tray if it fails.
+
+The tray menu offers **Show window**, **Hide window**, **Start**, **Restart**
+and **Stop session**, an optional **Restart automatically**, and **Exit**.
+Double-clicking the icon shows the session window, or starts one if none is
+running. The icon is the Claude Code icon while a session runs and a greyed-out
+copy of it when none does.
+
+### Why it hides a window rather than running headless
+
+`claude --remote-control` is an interactive session and needs a TTY, so it
+cannot simply be run in the background. A *hidden* console window still provides
+a complete TTY, though, so the tray starts the session in a real terminal window
+and hides it — the session runs normally, and **Show window** brings it back
+whenever there is something to read or type, such as an authentication prompt.
+
+Two Win32 details are worth knowing if you change this code:
+
+- `SW_SHOW` does not work on a console window created hidden; the call succeeds
+  and the window stays invisible. `SW_RESTORE` does work, and un-minimises too.
+- `ShowWindow` returns the window's *previous* visibility, not whether the call
+  succeeded, so its result is never worth testing.
+
+### Which terminal hosts the session
+
+| Host | When it is used | Trade-off |
+| --- | --- | --- |
+| Windows Terminal | Default when `wt.exe` is installed | Renders Claude Code's interface properly. Its window belongs to the shared `WindowsTerminal.exe` process, so the tray tracks it by window handle, and it flashes briefly at logon before being hidden |
+| Classic console | Automatic when Windows Terminal is missing; forced with `-UseConsoleHost` | Never flashes, and the session sits in the tray's own process tree — but Claude Code's interface renders noticeably worse |
+
+The console host launches `conhost.exe` explicitly rather than letting Windows
+choose, because Windows 11 delegates consoles to Windows Terminal by default,
+which would leave the visible window owned by `WindowsTerminal.exe` and the
+child process holding nothing but an invisible `PseudoConsoleWindow` stub.
+
+### Known limits
+
+- Windows Terminal keeps a window open when the process inside it exits
+  *un*cleanly, showing `[process exited with code N]`. The tray reads that window
+  as a running session, so a crashed session shows as running rather than
+  triggering **Restart automatically**. Opening the window shows the error, and
+  **Restart session** clears it.
+- If the tray is force-killed rather than exited from its menu, a hidden session
+  window survives with no way left to show it. Close the leftover `pwsh` or
+  `claude` process from Task Manager before starting the tray again.
+
 ## Claude Code skills
 
 Four Claude Code skills are provided under `.claude/skills/` so the same
@@ -150,3 +218,20 @@ Install dependencies (none required beyond Node.js) and run the test suite:
 ```sh
 npm test
 ```
+
+The tray application is a separate .NET project, built with the .NET 8 SDK:
+
+```powershell
+dotnet build tray\ClaudeLauncherTray.csproj -c Release
+
+# Run it against this repository without installing the scheduled task,
+# leaving the session window on screen so you can watch it start
+tray\bin\Release\net8.0-windows\win-x64\ClaudeLauncherTray.exe --visible
+
+# All options
+tray\bin\Release\net8.0-windows\win-x64\ClaudeLauncherTray.exe --help
+```
+
+Its build output is ignored via `tray/bin/`, `tray/obj/` and `tray/publish/`
+rather than a bare `bin/`, which would also match the tracked CLI entry point in
+this repository's own `bin/`.

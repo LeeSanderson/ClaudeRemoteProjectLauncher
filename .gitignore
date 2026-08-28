@@ -1,2 +1,8 @@
 node_modules/
 npm-debug.log*
+
+# Tray application build output. Scoped to tray/ on purpose: the repository's
+# own bin/ holds the CLI entry point and is tracked.
+tray/bin/
+tray/obj/
+tray/publish/
