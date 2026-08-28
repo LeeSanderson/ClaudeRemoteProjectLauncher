@@ -100,11 +100,12 @@ setting would be a worse failure than missing a newly added marker.
 
 ## Claude Code skills
 
-Two Claude Code skills are provided under `.claude/skills/` so the same
+Three Claude Code skills are provided under `.claude/skills/` so the same
 functionality is available from within a Claude Code session:
 
 - `/add-project <name> <path>` — registers a local project's name and path in
   `projects.json`.
+- `/list-projects` — lists the registered projects and their paths.
 - `/launch-project <name>` — launches Claude Code in remote mode for a
   previously registered project.
 
